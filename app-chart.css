@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  color: red;
+}
+
+polyfill-next-selector { content: ':host label'; }
+::content app-labels {
+  display: none;
+}

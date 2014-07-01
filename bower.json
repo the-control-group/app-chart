@@ -1,0 +1,11 @@
+{
+  "name": "app-chart",
+  "version": "0.0.0",
+  "keywords": "seed, polymer, web-components",
+  "main": "app-chart.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#~0.3.1",
+    "rickshaw": "~1.5.0",
+    "d3": "~3.4.9"
+  }
+}

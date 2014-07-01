@@ -1,0 +1,168 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="chart-import.html">
+<!--
+Element for creating charts
+
+##### Example
+
+    <app-chart type="Line"></app-chart>
+
+@element app-chart
+@blurb Element for creating charts
+@status alpha
+@homepage http://ChrisMcKenzie.github.io/app-chart
+-->
+<polymer-element name="app-chart" attributes="type data width height details legend shelf">
+
+  <template>
+
+    <link rel="stylesheet" href="app-chart.css" />
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/graph.css">
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/detail.css">
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
+    <content id="items" select="data"></content>
+
+    <div id="chartEl" width="{{width}}" height="{{height}}"></div>
+    <div id="legend"></div>
+
+  </template>
+
+  <script>
+
+    function merge(obj1,obj2){
+        var obj3 = {};
+        for (var attrname in obj1) { obj3[attrname] = obj1[attrname]; }
+        for (var attrname in obj2) { obj3[attrname] = obj2[attrname]; }
+        return obj3;
+    }
+
+    Polymer('app-chart', {
+
+      /**
+       * The `type` defines what type of chart we are building
+       *
+       * @attribute type
+       * @type string
+       */
+      type: 'Line',
+
+      /**
+       * The `context` attribute defines a canvas context for the
+       * charting system to render to.
+       *
+       * @attribute context
+       * @type CanvasRenderingContext2D
+       */
+      context: null,
+
+      /**
+       * The `labels` defines the labels for the datasets
+       *
+       * @attribute labels
+       * @type array
+       */
+      context: null,
+
+      /**
+       * The `data` attribute defines the data used for the chart
+       *
+       * @attribute data
+       * @type object
+       */
+      data: null,
+
+      /**
+       * The `details` attributes will show or hide
+       * the chart hover-details
+       *
+       * @attribute details
+       * @type bool
+       * @default true
+       */
+      details: true,
+
+      /**
+       * The `legend` attributes will show or hide
+       * the chart legend
+       *
+       * @attribute legend
+       * @type bool
+       * @default false
+       */
+      legend: false,
+
+      /**
+       * The `shelf` attributes will show or hide
+       * the chart shelving
+       *
+       * @attribute shelf
+       * @type bool
+       * @default true
+       */
+      shelf: true,
+
+      observe: {
+        'type details legend shelf': 'setup'
+      },
+
+      /**
+       * The `setup` method takes care of preparing the chart and
+       * configuring it with all the attributes applied.
+       *
+       * @method setup
+       * @return {Object} Returns undefined.
+       */
+      setup: function(){
+        if(this.type){
+          this.chart.configure({
+            renderer: this.type
+          });
+        }
+
+        if(this.details){
+          this.hoverDetail = new Rickshaw.Graph.HoverDetail( {
+            graph: this.chart
+          });
+        }
+
+        if(this.legend){
+          this.legendEl = new Rickshaw.Graph.Legend( {
+            graph: this.chart,
+            element: this.$.legend
+          });
+        }
+
+        if(this.shelf){
+          this.shelvingEl = new Rickshaw.Graph.Behavior.Series.Toggle( {
+            graph: this.chart,
+            legend: this.legendEl
+          } );
+        }
+
+        this.chart.update();
+      },
+
+      dataChanged: function(){
+
+      },
+
+      ready: function() {
+        // instantiate our graph!
+        this.chart = new Rickshaw.Graph( {
+          element: this.$.chartEl,
+          renderer: this.type,
+          width: this.width || 450,
+          height: this.height || 300,
+          series: JSON.parse(this.data)
+        } );
+
+        this.chart.render();
+
+        this.setup();
+      }
+
+    });
+
+  </script>
+
+</polymer-element>
