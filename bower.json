@@ -1,7 +1,7 @@
 {
   "name": "app-chart",
-  "version": "0.0.0",
-  "keywords": "seed, polymer, web-components",
+  "version": "0.0.1",
+  "keywords": "polymer, web-components, chart, d3, rickshaw, reporting",
   "main": "app-chart.html",
   "dependencies": {
     "polymer": "Polymer/polymer#~0.3.1",
