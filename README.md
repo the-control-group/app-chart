@@ -1,7 +1,7 @@
 app-chart
 ================
 
-See the [component page](http://ChrisMcKenzie.github.io/app-chart) for more information.
+See the [component page](http://AppBloks.github.io/app-chart) for more information.
 
 ## Getting Started
 
