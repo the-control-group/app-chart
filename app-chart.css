@@ -1,9 +1,13 @@
 :host {
   display: block;
-  color: red;
 }
 
 polyfill-next-selector { content: ':host label'; }
 ::content app-labels {
   display: none;
+}
+
+#chart_container, #chartEl {
+  height: 100%;
+  width: 100%;
 }

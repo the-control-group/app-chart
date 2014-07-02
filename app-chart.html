@@ -1,5 +1,6 @@
-<link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="chart-import.html">
+<link rel="import" href="../polymer/polymer.html">
+
 <!--
 Element for creating charts
 
@@ -12,7 +13,7 @@ Element for creating charts
 @status alpha
 @homepage http://ChrisMcKenzie.github.io/app-chart
 -->
-<polymer-element name="app-chart" attributes="type data width height details legend shelf">
+<polymer-element name="app-chart" attributes="xaxis type data width height details legend shelf">
 
   <template>
 
@@ -22,8 +23,13 @@ Element for creating charts
     <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
     <content id="items" select="data"></content>
 
-    <div id="chartEl" width="{{width}}" height="{{height}}"></div>
-    <div id="legend"></div>
+    <div id="chart_container">
+      <div id="y_axis"></div>
+      <div id="chartEl"></div>
+      <div id="x_axis"></div>
+      <div id="legend"></div>
+    </div>
+
 
   </template>
 
@@ -44,7 +50,7 @@ Element for creating charts
        * @attribute type
        * @type string
        */
-      type: 'Line',
+      type: 'line',
 
       /**
        * The `context` attribute defines a canvas context for the
@@ -72,17 +78,17 @@ Element for creating charts
       data: null,
 
       /**
-       * The `details` attributes will show or hide
+       * The `details` attribute will show or hide
        * the chart hover-details
        *
        * @attribute details
        * @type bool
        * @default true
        */
-      details: true,
+      details: false,
 
       /**
-       * The `legend` attributes will show or hide
+       * The `legend` attribute will show or hide
        * the chart legend
        *
        * @attribute legend
@@ -92,17 +98,27 @@ Element for creating charts
       legend: false,
 
       /**
-       * The `shelf` attributes will show or hide
+       * The `shelf` attribute will show or hide
        * the chart shelving
        *
        * @attribute shelf
        * @type bool
        * @default true
        */
-      shelf: true,
+      shelf: false,
+
+      /**
+       * The `x_axis` attribute will show or hide
+       * the chart shelving
+       *
+       * @attribute x_axis
+       * @type {object}
+       * @default null
+       */
+      xaxis: null,
 
       observe: {
-        'type details legend shelf': 'setup'
+        'type details legend shelf xaxis': 'setup'
       },
 
       /**
@@ -139,6 +155,18 @@ Element for creating charts
           } );
         }
 
+        if(this.xaxis){
+
+          if(this.xaxis == 'time'){
+            this.xAxis = new Rickshaw.Graph.Axis.Time( { graph: this.chart } );
+          } else {
+            this.xAxis =  new Rickshaw.Graph.Axis.X( merge({
+              graph: this.chart,
+              element: this.$.x_axis,
+            }), JSON.parse(this.xaxis) );
+          }
+        }
+
         this.chart.update();
       },
 
@@ -146,17 +174,28 @@ Element for creating charts
 
       },
 
+      updateFrameHeight: function(){
+        var dims = {};
+        dims.width = this.$.chartEl.clientWidth;
+        dims.height = this.$.chartEl.clientHeight;
+
+        this.chart.setSize(dims);
+        this.chart.update();
+      },
+
       ready: function() {
         // instantiate our graph!
         this.chart = new Rickshaw.Graph( {
           element: this.$.chartEl,
           renderer: this.type,
-          width: this.width || 450,
-          height: this.height || 300,
+          width:  this.width || this.$.chartEl.clientWidth || 450,
+          height:  this.height || this.$.chartEl.clientHeight || 300,
           series: JSON.parse(this.data)
         } );
 
         this.chart.render();
+
+        window.addEventListener('resize', this.updateFrameHeight.bind(this));
 
         this.setup();
       }
