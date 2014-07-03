@@ -11,9 +11,50 @@
 <body unresolved>
 
   <p>An `app-chart` looks like this:</p>
+  <template bind="{{ data }}">
+    <app-chart xaxis="time" type="line" data="{{ graph }}" responsive>
 
-  <app-chart type="stack" data='' width="500" height="400">
-  </app-chart>
+    </app-chart>
+  </template>
 
+  <script>
+    document.addEventListener('polymer-ready', function() {
+      // pass the info into the component
+      var t = document.querySelector('template');
+
+      var seriesData = [ [], [] ];
+      var random = new Rickshaw.Fixtures.RandomData(150);
+
+      for (var i = 0; i < 150; i++) {
+        random.addData(seriesData);
+      }
+      var palette = new Rickshaw.Color.Palette();
+
+      t.model = {
+            data: {
+              graph: [ {
+                color: palette.color(),
+                data: seriesData[0],
+                name: 'Moscow'
+              },{
+                color: palette.color(),
+                data: seriesData[1],
+                name: 'England'
+              } ]
+        }
+      }
+
+      var id = setInterval(function test(){
+        // console.log(data);
+        var el = document.querySelector('app-chart');
+        random.removeData(seriesData);
+        random.addData(seriesData);
+        el.chart.update();
+        // console.log(series);ç≥
+
+        // console.log(data);
+      }, 500)
+    });
+  </script>
 </body>
 </html>

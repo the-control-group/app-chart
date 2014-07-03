@@ -16,7 +16,6 @@ Element for creating charts
 <polymer-element name="app-chart" attributes="xaxis type data width height details legend shelf">
 
   <template>
-
     <link rel="stylesheet" href="app-chart.css" />
     <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/graph.css">
     <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/detail.css">
@@ -43,7 +42,6 @@ Element for creating charts
     }
 
     Polymer('app-chart', {
-
       /**
        * The `type` defines what type of chart we are building
        *
@@ -51,6 +49,18 @@ Element for creating charts
        * @type string
        */
       type: 'line',
+
+      /**
+       * The `responsive` attribute tells the element whether or not to
+       * resize to fit screen
+       *
+       * @attribute context
+       * @type CanvasRenderingContext2D
+       */
+      responsive: {
+        value: false,
+        reflect: true
+      },
 
       /**
        * The `context` attribute defines a canvas context for the
@@ -73,9 +83,12 @@ Element for creating charts
        * The `data` attribute defines the data used for the chart
        *
        * @attribute data
-       * @type object
+       * @type array
        */
-      data: null,
+      data: {
+        value: [],
+        reflect: true
+      },
 
       /**
        * The `details` attribute will show or hide
@@ -118,6 +131,7 @@ Element for creating charts
       xaxis: null,
 
       observe: {
+        'data.*': 'dataChanged',
         'type details legend shelf xaxis': 'setup'
       },
 
@@ -129,49 +143,74 @@ Element for creating charts
        * @return {Object} Returns undefined.
        */
       setup: function(){
-        if(this.type){
-          this.chart.configure({
-            renderer: this.type
-          });
-        }
+        if(this.data){
+          if(!this.chart){
+            this.chart = new Rickshaw.Graph( {
+              element: this.$.chartEl,
+              renderer: this.type,
+              width:  this.width || this.$.chartEl.clientWidth || 450,
+              height:  this.height || this.$.chartEl.clientHeight || 300,
+              series: this.data
+            });
 
-        if(this.details){
-          this.hoverDetail = new Rickshaw.Graph.HoverDetail( {
-            graph: this.chart
-          });
-        }
+            // var smoother = new Rickshaw.Graph.Smoother( {
+            //   graph: this.chart,
+            //   element: this.$.chartEl
+            // } );
 
-        if(this.legend){
-          this.legendEl = new Rickshaw.Graph.Legend( {
-            graph: this.chart,
-            element: this.$.legend
-          });
-        }
-
-        if(this.shelf){
-          this.shelvingEl = new Rickshaw.Graph.Behavior.Series.Toggle( {
-            graph: this.chart,
-            legend: this.legendEl
-          } );
-        }
-
-        if(this.xaxis){
-
-          if(this.xaxis == 'time'){
-            this.xAxis = new Rickshaw.Graph.Axis.Time( { graph: this.chart } );
-          } else {
-            this.xAxis =  new Rickshaw.Graph.Axis.X( merge({
-              graph: this.chart,
-              element: this.$.x_axis,
-            }), JSON.parse(this.xaxis) );
+            this.chart.render();
           }
-        }
 
-        this.chart.update();
+          if(this.type){
+            this.chart.configure({
+              renderer: this.type
+            });
+          }
+
+          if(this.details){
+            this.hoverDetail = new Rickshaw.Graph.HoverDetail( {
+              graph: this.chart
+            });
+          }
+
+          if(this.legend){
+            this.legendEl = new Rickshaw.Graph.Legend( {
+              graph: this.chart,
+              element: this.$.legend
+            });
+          }
+
+          if(this.shelf){
+            this.shelvingEl = new Rickshaw.Graph.Behavior.Series.Toggle( {
+              graph: this.chart,
+              legend: this.legendEl
+            } );
+          }
+
+          if(this.xaxis){
+
+            if(this.xaxis == 'time'){
+              this.xAxis = new Rickshaw.Graph.Axis.Time( { graph: this.chart } );
+            } else {
+              this.xAxis =  new Rickshaw.Graph.Axis.X( merge({
+                graph: this.chart,
+                element: this.$.x_axis,
+              }), JSON.parse(this.xaxis) );
+            }
+          }
+
+          this.chart.update();
+        }
+      },
+
+      buildData: function(){
       },
 
       dataChanged: function(){
-
+        console.log(arguments)
+        console.log('data changed');
+        console.log(this.data);
+        this.async(this.chart.update.bind(this.chart));
       },
 
       updateFrameHeight: function(){
@@ -183,21 +222,18 @@ Element for creating charts
         this.chart.update();
       },
 
+      created: function(){
+        // this.data = [];
+      },
+
       ready: function() {
         // instantiate our graph!
-        this.chart = new Rickshaw.Graph( {
-          element: this.$.chartEl,
-          renderer: this.type,
-          width:  this.width || this.$.chartEl.clientWidth || 450,
-          height:  this.height || this.$.chartEl.clientHeight || 300,
-          series: JSON.parse(this.data)
-        } );
-
-        this.chart.render();
-
-        window.addEventListener('resize', this.updateFrameHeight.bind(this));
-
         this.setup();
+        if(this.responsive){
+          window.addEventListener('resize', this.updateFrameHeight.bind(this));
+          this.async(this.updateFrameHeight.bind(this))
+        }
+
       }
 
     });
