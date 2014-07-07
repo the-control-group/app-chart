@@ -22,12 +22,9 @@ Element for creating charts
     <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
     <content id="series" select="app-chart-series"></content>
 
-
     <div id="chart_container">
-      <div id="y_axis"></div>
+      <content id="options" select="*"></content>
       <div id="chartEl"></div>
-      <div id="x_axis"></div>
-      <div id="legend"></div>
     </div>
 
 
@@ -76,6 +73,24 @@ Element for creating charts
          * @default []
          */
         series:  [],
+
+        /**
+         * the chart height
+         *
+         * @attribute height
+         * @type Number
+         * @default null
+         */
+        height: null,
+
+        /**
+         * the chart width
+         *
+         * @attribute width
+         * @type Number
+         * @default null
+         */
+        width: null
       },
 
       ready: function(){
@@ -88,14 +103,15 @@ Element for creating charts
 
       domReady: function(){
         this.async(this.updateDataSets.bind(this));
+        this.async(this.updateOptions.bind(this));
       },
 
       setup: function(){
         if(!this.chart){
           this.chart = new Rickshaw.Graph({
             element: this.$.chartEl,
-            width: this.responsive ? this.clientWidth : (this.width || 400),
-            height: this.responsive ? this.clientHeight : (this.height || 350),
+            width: this.width ? this.width : this.responsive ? this.clientWidth - 40 : 400,
+            height: this.height ? this.height : this.responsive ? this.clientHeight : 350,
             renderer: this.type || 'stack',
             series: this.series
           });
@@ -108,11 +124,24 @@ Element for creating charts
 
       updateSize: function(){
         var dims = {};
-        dims.width = this.clientWidth;
-        dims.height = this.clientHeight;
+        dims.width = this.width ? this.width : this.responsive ? this.clientWidth - 40 : 400;
+        dims.height = this.height ? this.height : this.responsive ? this.clientHeight : 350;
+
 
         this.chart.setSize(dims);
         this.chart.update();
+      },
+
+      updateOptions: function(){
+        this.options = this.$.options.getDistributedNodes().array();
+
+        this.onMutation(this, this.updateOptions);
+
+        this.setup();
+
+        this.options.forEach((function(option){
+          option.chart = this.chart;
+        }).bind(this));
       },
 
       updateDataSets: function(){
@@ -241,6 +270,98 @@ It is used as a child of `app-chart-series`
        * @default ''
        */
       message: null
+    }
+  })
+  </script>
+</polymer-element>
+
+<!--
+The `app-chart-axis` element represents an axis in which to render
+tick marks
+
+##### Example
+
+    <app-chart type="line">
+      <app-chart-axis type="time"></app-chart-axis>
+      <app-chart-series name="MySeries">
+        <app-chart-data x="1902" y="12313141"></app-chart-data>
+      </app-chart-series>
+    </app-chart>
+
+@element app-chart-axis
+@status alpha
+@homepage http://the-control-group.github.io/app-chart
+-->
+<polymer-element name="app-chart-axis" attributes="type chart element orientation">
+  <template>
+    <link rel="stylesheet" href="app-chart.css" />
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/graph.css">
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/detail.css">
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
+    <style>
+      :host {
+        position: absolute;
+        width: 40px;
+        height: 100%;
+      }
+      .y_axis {
+        height: 100%;
+      }
+    </style>
+    <div id="axis" class="{{ {y_axis: type == 'y'} | tokenList}}"></div>
+  </template>
+  <script>
+  Polymer('app-chart-axis', {
+    publish: {
+      /**
+       * type of axis renderer
+       *
+       * @attribute type
+       * @type String
+       * @default time
+       */
+      type: 'time',
+
+      /**
+       * chart object to render to
+       *
+       * @attribute graph
+       * @type Object
+       * @default null
+       */
+    },
+
+    observe: {
+      'chart': 'setup'
+    },
+
+    setup: function(){
+      this.height = this.parentNode.height
+      if(this.chart != null){
+        if(this.type == 'time'){
+          this.axis = new Rickshaw.Graph.Axis.Time( { graph: this.chart } );
+        } else if(this.type == 'y') {
+          this.axis = new Rickshaw.Graph.Axis.Y( {
+            graph: this.chart,
+            orientation: this.orientation || 'left',
+            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+            element: this.$.axis,
+          } );
+        } else if(this.type == 'x') {
+          this.axis = new Rickshaw.Graph.Axis.X( {
+            graph: this.chart,
+            orientation: this.orientation || 'top',
+            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+            element: this.$.axis,
+          } );
+        }
+
+        this.chart.update();
+      }
+    },
+
+    ready: function(){
+      this.async(this.setup);
     }
   })
   </script>

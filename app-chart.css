@@ -9,5 +9,9 @@ polyfill-next-selector { content: ':host label'; }
 
 #chart_container, #chartEl {
   height: 100%;
-  width: 100%;
+  width: calc(100% - 40px);
+}
+
+#chartEl {
+  margin-left: 40px;
 }
