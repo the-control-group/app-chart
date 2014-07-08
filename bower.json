@@ -5,7 +5,7 @@
     "Chris McKenzie <chris@kbsurfer.com>"
   ],
   "license": "MIT",
-  "homepage": "http://appbloks.github.io/app-chart/components/app-chart/",
+  "homepage": "http://the-control-group.github.io/app-chart/components/app-chart/",
   "ignore": [
     "**/.*",
     "node_modules",
