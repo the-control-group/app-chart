@@ -1,29 +1,33 @@
+<script src='../d3/d3.js'></script>
+<script src='../rickshaw/rickshaw.js'></script>
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="chart-import.html">
+
 <!--
 Element for creating charts
 
 ##### Example
 
-    <app-chart type="Line"></app-chart>
+    <app-chart type="line"></app-chart>
 
 @element app-chart
 @blurb Element for creating charts
 @status alpha
-@homepage http://ChrisMcKenzie.github.io/app-chart
+@homepage http://the-control-group.github.io/app-chart
 -->
-<polymer-element name="app-chart" attributes="type data width height details legend shelf">
+<polymer-element name="app-chart" attributes="type repsonsive">
 
   <template>
-
     <link rel="stylesheet" href="app-chart.css" />
     <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/graph.css">
     <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/detail.css">
     <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
-    <content id="items" select="data"></content>
+    <content id="series" select="app-chart-series"></content>
 
-    <div id="chartEl" width="{{width}}" height="{{height}}"></div>
-    <div id="legend"></div>
+    <div id="chart_container">
+      <content id="options" select="*"></content>
+      <div id="chartEl"></div>
+    </div>
+
 
   </template>
 
@@ -37,132 +41,329 @@ Element for creating charts
     }
 
     Polymer('app-chart', {
-
       /**
-       * The `type` defines what type of chart we are building
+       * type of renderer for the chart
+       *
+       *  __renderers available__
+       *  - stack
+       *  - line
+       *  - scatterplot
        *
        * @attribute type
-       * @type string
+       * @type String
+       * @default ''
        */
-      type: 'Line',
 
-      /**
-       * The `context` attribute defines a canvas context for the
-       * charting system to render to.
-       *
-       * @attribute context
-       * @type CanvasRenderingContext2D
-       */
-      context: null,
+      publish: {
+        /**
+         * this chart should be responsive to window size
+         *
+         * @attribute responsive
+         * @type Boolean
+         * @default ''
+         */
+        responsive: {
+          value: false,
+          reflect: true
+        },
+        /**
+         * the chart series data
+         *
+         * @attribute series
+         * @type Array
+         * @default []
+         */
+        series:  [],
 
-      /**
-       * The `labels` defines the labels for the datasets
-       *
-       * @attribute labels
-       * @type array
-       */
-      context: null,
+        /**
+         * the chart height
+         *
+         * @attribute height
+         * @type Number
+         * @default null
+         */
+        height: null,
 
-      /**
-       * The `data` attribute defines the data used for the chart
-       *
-       * @attribute data
-       * @type object
-       */
-      data: null,
-
-      /**
-       * The `details` attributes will show or hide
-       * the chart hover-details
-       *
-       * @attribute details
-       * @type bool
-       * @default true
-       */
-      details: true,
-
-      /**
-       * The `legend` attributes will show or hide
-       * the chart legend
-       *
-       * @attribute legend
-       * @type bool
-       * @default false
-       */
-      legend: false,
-
-      /**
-       * The `shelf` attributes will show or hide
-       * the chart shelving
-       *
-       * @attribute shelf
-       * @type bool
-       * @default true
-       */
-      shelf: true,
-
-      observe: {
-        'type details legend shelf': 'setup'
+        /**
+         * the chart width
+         *
+         * @attribute width
+         * @type Number
+         * @default null
+         */
+        width: null
       },
 
-      /**
-       * The `setup` method takes care of preparing the chart and
-       * configuring it with all the attributes applied.
-       *
-       * @method setup
-       * @return {Object} Returns undefined.
-       */
+      ready: function(){
+        this.series = [];
+        this.chart = null;
+        if(this.responsive){
+          window.addEventListener('resize', this.updateSize.bind(this));
+        }
+      },
+
+      domReady: function(){
+        this.async(this.updateDataSets.bind(this));
+        this.async(this.updateOptions.bind(this));
+      },
+
       setup: function(){
-        if(this.type){
-          this.chart.configure({
-            renderer: this.type
+        if(!this.chart){
+          this.chart = new Rickshaw.Graph({
+            element: this.$.chartEl,
+            width: this.width ? this.width : this.responsive ? this.clientWidth - 40 : 400,
+            height: this.height ? this.height : this.responsive ? this.clientHeight : 350,
+            renderer: this.type || 'stack',
+            series: this.series
           });
+        } else {
+          this.chart.series = this.series;
         }
 
-        if(this.details){
-          this.hoverDetail = new Rickshaw.Graph.HoverDetail( {
-            graph: this.chart
-          });
-        }
+        this.chart.render();
+      },
 
-        if(this.legend){
-          this.legendEl = new Rickshaw.Graph.Legend( {
-            graph: this.chart,
-            element: this.$.legend
-          });
-        }
+      updateSize: function(){
+        var dims = {};
+        dims.width = this.width ? this.width : this.responsive ? this.clientWidth - 40 : 400;
+        dims.height = this.height ? this.height : this.responsive ? this.clientHeight : 350;
 
-        if(this.shelf){
-          this.shelvingEl = new Rickshaw.Graph.Behavior.Series.Toggle( {
-            graph: this.chart,
-            legend: this.legendEl
-          } );
-        }
 
+        this.chart.setSize(dims);
         this.chart.update();
       },
 
-      dataChanged: function(){
+      updateOptions: function(){
+        this.options = this.$.options.getDistributedNodes().array();
 
-      },
-
-      ready: function() {
-        // instantiate our graph!
-        this.chart = new Rickshaw.Graph( {
-          element: this.$.chartEl,
-          renderer: this.type,
-          width: this.width || 450,
-          height: this.height || 300,
-          series: JSON.parse(this.data)
-        } );
-
-        this.chart.render();
+        this.onMutation(this, this.updateOptions);
 
         this.setup();
-      }
 
+        this.options.forEach((function(option){
+          option.chart = this.chart;
+        }).bind(this));
+      },
+
+      updateDataSets: function(){
+        this.series = this.$.series.getDistributedNodes().array();
+
+        this.onMutation(this, this.updateDataSets);
+
+        this.series.forEach((function(dataset, k){
+          var newData = {};
+          newData.name = dataset.name;
+          newData.color = dataset.color;
+          newData.data = dataset.data;
+          this.series[k] = newData;
+        }).bind(this))
+
+        // console.log(this.series)
+        this.setup();
+      }
     });
 
   </script>
 
+</polymer-element>
+
+<!--
+The `app-chart-series` element represents a series of data.
+It is used as a child of `app-chart`
+
+##### Example
+
+    <app-chart type="line">
+      <app-chart-series name="MySeries">
+        // data goes here
+      </app-chart-series>
+    </app-chart>
+
+@element app-chart-series
+@status alpha
+@homepage http://the-control-group.github.io/app-chart
+-->
+<polymer-element name="app-chart-series" attributes="name color">
+  <template>
+    <content id="dataset" select="app-chart-data"></content>
+  </template>
+  <script>
+  Polymer('app-chart-series', {
+    /**
+     * name of the series
+     *
+     * @attribute name
+     * @type String
+     * @default ''
+     */
+
+    /**
+     * color of the series
+     *
+     * @attribute color
+     * @type String
+     * @default ''
+     */
+
+    attached: function(){
+      this.async(this.updateDataSet.bind(this));
+    },
+
+    updateDataSet: function(){
+      this.data = Array.prototype.slice.call(this.$.dataset.getDistributedNodes());
+
+      this.data.forEach((function(item, k){
+        var newData = {};
+        newData.x = item.x,
+        newData.y = item.y
+        this.data[k] = newData;
+      }).bind(this))
+
+      this.onMutation(this, this.updateDataSet);
+    }
+  })
+  </script>
+</polymer-element>
+
+<!--
+The `app-chart-data` element represents a point of data.
+It is used as a child of `app-chart-series`
+
+##### Example
+
+    <app-chart type="line">
+      <app-chart-series name="MySeries">
+        <app-chart-data x="1902" y="12313141"></app-chart-data>
+      </app-chart-series>
+    </app-chart>
+
+@element app-chart-data
+@status alpha
+@homepage http://the-control-group.github.io/app-chart
+-->
+<polymer-element name="app-chart-data" attributes="x y message">
+  <script>
+  Polymer('app-chart-data', {
+    publish: {
+      /**
+       * x value for the data
+       *
+       * @attribute x
+       * @type Number
+       * @default 0
+       */
+      x: 0,
+
+      /**
+       * y value for the data
+       *
+       * @attribute y
+       * @type Number
+       * @default 0
+       */
+      y: 0,
+
+      /**
+       * message to annotate the data with.
+       *
+       * @attribute message
+       * @type String
+       * @default ''
+       */
+      message: null
+    }
+  })
+  </script>
+</polymer-element>
+
+<!--
+The `app-chart-axis` element represents an axis in which to render
+tick marks
+
+##### Example
+
+    <app-chart type="line">
+      <app-chart-axis type="time"></app-chart-axis>
+      <app-chart-series name="MySeries">
+        <app-chart-data x="1902" y="12313141"></app-chart-data>
+      </app-chart-series>
+    </app-chart>
+
+@element app-chart-axis
+@status alpha
+@homepage http://the-control-group.github.io/app-chart
+-->
+<polymer-element name="app-chart-axis" attributes="type chart element orientation">
+  <template>
+    <link rel="stylesheet" href="app-chart.css" />
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/graph.css">
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/detail.css">
+    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
+    <style>
+      :host {
+        position: absolute;
+        width: 40px;
+        height: 100%;
+      }
+      .y_axis {
+        height: 100%;
+      }
+    </style>
+    <div id="axis" class="{{ {y_axis: type == 'y'} | tokenList}}"></div>
+  </template>
+  <script>
+  Polymer('app-chart-axis', {
+    publish: {
+      /**
+       * type of axis renderer
+       *
+       * @attribute type
+       * @type String
+       * @default time
+       */
+      type: 'time',
+
+      /**
+       * chart object to render to
+       *
+       * @attribute graph
+       * @type Object
+       * @default null
+       */
+    },
+
+    observe: {
+      'chart': 'setup'
+    },
+
+    setup: function(){
+      this.height = this.parentNode.height
+      if(this.chart != null){
+        if(this.type == 'time'){
+          this.axis = new Rickshaw.Graph.Axis.Time( { graph: this.chart } );
+        } else if(this.type == 'y') {
+          this.axis = new Rickshaw.Graph.Axis.Y( {
+            graph: this.chart,
+            orientation: this.orientation || 'left',
+            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+            element: this.$.axis,
+          } );
+        } else if(this.type == 'x') {
+          this.axis = new Rickshaw.Graph.Axis.X( {
+            graph: this.chart,
+            orientation: this.orientation || 'top',
+            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+            element: this.$.axis,
+          } );
+        }
+
+        this.chart.update();
+      }
+    },
+
+    ready: function(){
+      this.async(this.setup);
+    }
+  })
+  </script>
 </polymer-element>
