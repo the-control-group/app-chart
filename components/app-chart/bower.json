@@ -1,7 +1,20 @@
 {
   "name": "app-chart",
-  "version": "0.0.0",
-  "keywords": "seed, polymer, web-components",
+  "version": "0.0.1",
+  "authors": [
+    "Chris McKenzie <chris@kbsurfer.com>"
+  ],
+  "license": "MIT",
+  "homepage": "http://the-control-group.github.io/app-chart/components/app-chart/",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "description": "An element for building charts using rickshaw and d3",
+  "keywords": "polymer, web-components, chart, d3, rickshaw, reporting",
   "main": "app-chart.html",
   "dependencies": {
     "polymer": "Polymer/polymer#~0.3.1",
