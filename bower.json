@@ -14,7 +14,7 @@
     "tests"
   ],
   "description": "An element for building charts using rickshaw and d3",
-  "keywords": "polymer, web-components, chart, d3, rickshaw, reporting",
+  "keywords": ["polymer", "web-components", "chart", "d3", "rickshaw", "reporting"],
   "main": "app-chart.html",
   "dependencies": {
     "polymer": "Polymer/polymer#~0.3.1",
