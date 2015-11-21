@@ -1,24 +1,27 @@
 {
   "name": "app-chart",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "authors": [
-    "Chris McKenzie <chris@kbsurfer.com>"
+    "Chris McKenzie <chris@kbsurfer.com>",
+    "Alfonso Aguilar <laltfuns@gmail.com>"
   ],
   "license": "MIT",
   "homepage": "http://the-control-group.github.io/app-chart/components/app-chart/",
   "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
+    "/.*",
+    "/test/",
+    "/demo/"
   ],
   "description": "An element for building charts using rickshaw and d3",
   "keywords": ["polymer", "web-components", "chart", "d3", "rickshaw", "reporting"],
   "main": "app-chart.html",
   "dependencies": {
-    "polymer": "Polymer/polymer#~0.3.1",
+    "polymer": "Polymer/polymer#^1.0.0",
     "rickshaw": "~1.5.0",
     "d3": "~3.4.9"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*"
   }
 }

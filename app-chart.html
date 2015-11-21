@@ -1,6 +1,5 @@
-<script src='../d3/d3.js'></script>
-<script src='../rickshaw/rickshaw.js'></script>
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="chart-import.html">
 
 <!--
 Element for creating charts
@@ -14,21 +13,32 @@ Element for creating charts
 @status alpha
 @homepage http://the-control-group.github.io/app-chart
 -->
-<polymer-element name="app-chart" attributes="type repsonsive">
+<dom-module id="app-chart">
+  <style>
+    :host {
+      display: block;
+    }
+    #chart_container, #chartEl {
+      height: 100%;
+      width: calc(100% - 40px);
+    }
+
+    #chartEl {
+      margin-left: 40px;
+    }
+
+    polyfill-next-selector { content: ':host label'; }
+    ::content app-labels {
+      display: none;
+    }
+  </style>
 
   <template>
-    <link rel="stylesheet" href="app-chart.css" />
-    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/graph.css">
-    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/detail.css">
-    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
     <content id="series" select="app-chart-series"></content>
-
     <div id="chart_container">
       <content id="options" select="*"></content>
       <div id="chartEl"></div>
     </div>
-
-
   </template>
 
   <script>
@@ -40,32 +50,41 @@ Element for creating charts
         return obj3;
     }
 
-    Polymer('app-chart', {
-      /**
-       * type of renderer for the chart
-       *
-       *  __renderers available__
-       *  - stack
-       *  - line
-       *  - scatterplot
-       *
-       * @attribute type
-       * @type String
-       * @default ''
-       */
+    Polymer({
 
-      publish: {
+      is: 'app-chart',
+
+      properties: {
+        /**
+         * type of renderer for the chart
+         *
+         *  __renderers available__
+         *  - stack
+         *  - line
+         *  - scatterplot
+         *
+         * @attribute type
+         * @type String
+         * @default 'line'
+         */
+        type: {
+          type: String,
+          value: 'line',
+          notify: true
+        },
         /**
          * this chart should be responsive to window size
          *
          * @attribute responsive
          * @type Boolean
-         * @default ''
+         * @default 'false'
          */
         responsive: {
+          type: Boolean,
           value: false,
-          reflect: true
+          notify: true
         },
+
         /**
          * the chart series data
          *
@@ -73,7 +92,11 @@ Element for creating charts
          * @type Array
          * @default []
          */
-        series:  [],
+        series: {
+          type: Array,
+          value: [],
+          notify: true
+        },
 
         /**
          * the chart height
@@ -82,7 +105,7 @@ Element for creating charts
          * @type Number
          * @default null
          */
-        height: null,
+        height: Number,
 
         /**
          * the chart width
@@ -91,7 +114,7 @@ Element for creating charts
          * @type Number
          * @default null
          */
-        width: null
+        width: Number
       },
 
       ready: function(){
@@ -102,7 +125,7 @@ Element for creating charts
         }
       },
 
-      domReady: function(){
+      attached: function(){
         this.async(this.updateDataSets.bind(this));
         this.async(this.updateOptions.bind(this));
       },
@@ -134,9 +157,12 @@ Element for creating charts
       },
 
       updateOptions: function(){
-        this.options = this.$.options.getDistributedNodes().array();
+        this.options = this.getContentChildren('#options');
 
-        this.onMutation(this, this.updateOptions);
+        new MutationObserver(this.updateOptions).observe(this, {
+          attributes: true,
+          attributeOldValue: true
+        });
 
         this.setup();
 
@@ -146,9 +172,12 @@ Element for creating charts
       },
 
       updateDataSets: function(){
-        this.series = this.$.series.getDistributedNodes().array();
+        this.series = this.getContentChildren('#series');
 
-        this.onMutation(this, this.updateDataSets);
+        new MutationObserver(this.updateDataSets).observe(this, {
+          attributes: true,
+          attributeOldValue: true
+        });
 
         this.series.forEach((function(dataset, k){
           var newData = {};
@@ -165,7 +194,7 @@ Element for creating charts
 
   </script>
 
-</polymer-element>
+</dom-module>
 
 <!--
 The `app-chart-series` element represents a series of data.
@@ -183,47 +212,68 @@ It is used as a child of `app-chart`
 @status alpha
 @homepage http://the-control-group.github.io/app-chart
 -->
-<polymer-element name="app-chart-series" attributes="name color">
+<dom-module id="app-chart-series">
   <template>
     <content id="dataset" select="app-chart-data"></content>
   </template>
   <script>
-  Polymer('app-chart-series', {
-    /**
-     * name of the series
-     *
-     * @attribute name
-     * @type String
-     * @default ''
-     */
+  Polymer({
+    is : 'app-chart-series',
 
-    /**
-     * color of the series
-     *
-     * @attribute color
-     * @type String
-     * @default ''
-     */
+    properties : {
+      /**
+       * name of the series
+       *
+       * @attribute name
+       * @type String
+       * @default ''
+       */
+      name : {
+        type: String,
+        notify: true,
+      },
+
+      /**
+       * color of the series
+       *
+       * @attribute color
+       * @type String
+       * @default ''
+       */
+      color : {
+        type: String,
+        notify: true,
+      },
+
+      data: {
+        type: Array,
+        notify: true,
+        reflectToAttribute: true
+      }
+    },
 
     attached: function(){
-      this.async(this.updateDataSet.bind(this));
+      this.updateDataSet();
     },
 
     updateDataSet: function(){
-      this.data = Array.prototype.slice.call(this.$.dataset.getDistributedNodes());
+      this.data = Array.prototype.slice.call(this.getContentChildren('#dataset'));
 
       this.data.forEach((function(item, k){
         var newData = {};
         newData.x = item.x,
         newData.y = item.y
         this.data[k] = newData;
-      }).bind(this))
+      }).bind(this));
 
-      this.onMutation(this, this.updateDataSet);
+      new MutationObserver(this.updateDataSet).observe(this, {
+        attributes: true,
+        attributeOldValue: true
+      });
     }
   })
   </script>
-</polymer-element>
+</dom-module>
 
 <!--
 The `app-chart-data` element represents a point of data.
@@ -241,10 +291,12 @@ It is used as a child of `app-chart-series`
 @status alpha
 @homepage http://the-control-group.github.io/app-chart
 -->
-<polymer-element name="app-chart-data" attributes="x y message">
+<dom-module id="app-chart-data" attributes="x y message">
   <script>
-  Polymer('app-chart-data', {
-    publish: {
+  Polymer({
+    is: 'app-chart-data',
+
+    properties: {
       /**
        * x value for the data
        *
@@ -252,7 +304,11 @@ It is used as a child of `app-chart-series`
        * @type Number
        * @default 0
        */
-      x: 0,
+      x: {
+        type: Number,
+        value: 0,
+        notify: true
+      },
 
       /**
        * y value for the data
@@ -261,7 +317,11 @@ It is used as a child of `app-chart-series`
        * @type Number
        * @default 0
        */
-      y: 0,
+       y: {
+         type: Number,
+         value: 0,
+         notify: true
+       },
 
       /**
        * message to annotate the data with.
@@ -270,11 +330,14 @@ It is used as a child of `app-chart-series`
        * @type String
        * @default ''
        */
-      message: null
+      message: {
+        type: String,
+        notify: true
+      }
     }
   })
   </script>
-</polymer-element>
+</dom-module>
 
 <!--
 The `app-chart-axis` element represents an axis in which to render
@@ -293,27 +356,24 @@ tick marks
 @status alpha
 @homepage http://the-control-group.github.io/app-chart
 -->
-<polymer-element name="app-chart-axis" attributes="type chart element orientation">
+<dom-module id="app-chart-axis">
+  <style>
+    :host {
+      position: absolute;
+      width: 40px;
+      height: 100%;
+    }
+    .y_axis {
+      height: 100%;
+    }
+  </style>
   <template>
-    <link rel="stylesheet" href="app-chart.css" />
-    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/graph.css">
-    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/detail.css">
-    <link type="text/css" rel="stylesheet" href="../rickshaw/src/css/legend.css">
-    <style>
-      :host {
-        position: absolute;
-        width: 40px;
-        height: 100%;
-      }
-      .y_axis {
-        height: 100%;
-      }
-    </style>
     <div id="axis" class="{{ {y_axis: type == 'y'} | tokenList}}"></div>
   </template>
   <script>
-  Polymer('app-chart-axis', {
-    publish: {
+  Polymer({
+    is: 'app-chart-axis',
+    properties: {
       /**
        * type of axis renderer
        *
@@ -321,7 +381,11 @@ tick marks
        * @type String
        * @default time
        */
-      type: 'time',
+      type: {
+        type: String,
+        value: 'time',
+        notify: true
+      },
 
       /**
        * chart object to render to
@@ -330,10 +394,21 @@ tick marks
        * @type Object
        * @default null
        */
-    },
+       chart: {
+         type: Object,
+         notify: true,
+         observer : 'setup'
+       },
 
-    observe: {
-      'chart': 'setup'
+       element: {
+         type: String,
+         notify: true
+       },
+
+       orientation: {
+         type: String,
+         notify: true
+       }
     },
 
     setup: function(){
@@ -366,4 +441,4 @@ tick marks
     }
   })
   </script>
-</polymer-element>
+</dom-module>
